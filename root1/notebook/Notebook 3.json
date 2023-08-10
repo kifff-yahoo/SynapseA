@@ -1,0 +1,216 @@
+{
+	"name": "Notebook 3",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "poolSparkSyn01",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2,
+			"runAsWorkspaceSystemIdentity": false,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "false",
+				"spark.dynamicAllocation.minExecutors": "2",
+				"spark.dynamicAllocation.maxExecutors": "2",
+				"spark.autotune.trackingId": "4ea1a7d6-2fec-423f-a9bf-aadcb2f9ccc7"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"synapse_widget": {
+				"version": "0.1",
+				"state": {
+					"92ae1052-6b68-479e-8fd4-09813b716be5": {
+						"type": "Synapse.DataFrame",
+						"sync_state": {
+							"table": {
+								"rows": [
+									{
+										"0": "0",
+										"1": "0.4",
+										"2": "0.4"
+									},
+									{
+										"0": "1",
+										"1": "190167.33999999636",
+										"2": "2.862931169456768"
+									},
+									{
+										"0": "2",
+										"1": "49399.7400000001",
+										"2": "3.12439061412941"
+									},
+									{
+										"0": "3",
+										"1": "14790.389999999987",
+										"2": "2.8797488317756983"
+									},
+									{
+										"0": "4",
+										"1": "8558.350000000004",
+										"2": "2.990338923829491"
+									},
+									{
+										"0": "5",
+										"1": "17187.240000000013",
+										"2": "2.8507613202852897"
+									},
+									{
+										"0": "6",
+										"1": "10741.91",
+										"2": "2.8744741771474445"
+									}
+								],
+								"schema": [
+									{
+										"key": "0",
+										"name": "passengerCount",
+										"type": "int"
+									},
+									{
+										"key": "1",
+										"name": "SumTripDistance",
+										"type": "double"
+									},
+									{
+										"key": "2",
+										"name": "AvgTripDistance",
+										"type": "double"
+									}
+								],
+								"truncated": false
+							},
+							"isSummary": false,
+							"language": "scala"
+						},
+						"persist_state": {
+							"view": {
+								"type": "details",
+								"chartOptions": {
+									"chartType": "bar",
+									"aggregationType": "sum",
+									"categoryFieldKeys": [
+										"1"
+									],
+									"seriesFieldKeys": [
+										"0"
+									],
+									"isStacked": false
+								}
+							}
+						}
+					}
+				}
+			},
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/6653426b-4147-4866-92d5-1d730261436b/resourceGroups/rg-synapse/providers/Microsoft.Synapse/workspaces/ws-synapse-kif/bigDataPools/poolSparkSyn01",
+				"name": "poolSparkSyn01",
+				"type": "Spark",
+				"endpoint": "https://ws-synapse-kif.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/poolSparkSyn01",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net",
+					"authHeader": null
+				},
+				"sparkVersion": "3.3",
+				"nodeCount": 10,
+				"cores": 4,
+				"memory": 28,
+				"extraHeader": null
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"source": [
+					"b = 3 + 6"
+				],
+				"execution_count": 3
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"display(b)"
+				],
+				"execution_count": 4
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "python"
+					},
+					"collapsed": false
+				},
+				"source": [
+					"%%pyspark\n",
+					"df = spark.sql(\"\"\"\n",
+					"\n",
+					"SELECT passengerCount,\n",
+					"SUM(TripDistanceMiles) as SumTripDistance,\n",
+					"AVG(TripDistanceMiles) as AvgTripDistance\n",
+					"FROM nyctaxi.trip\n",
+					"GROUP BY passengerCount\n",
+					"ORDER BY passengerCount \n",
+					"\n",
+					"\"\"\") \n",
+					"display(df)\n",
+					"df.write.saveAsTable(\"nyctaxi.passengercountstats\")"
+				],
+				"execution_count": 8
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					""
+				]
+			}
+		]
+	}
+}

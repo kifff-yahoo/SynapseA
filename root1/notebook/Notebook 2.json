@@ -1,0 +1,93 @@
+{
+	"name": "Notebook 2",
+	"properties": {
+		"description": "Store PassCountStats as pqt",
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "poolSparkSyn01",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2,
+			"runAsWorkspaceSystemIdentity": false,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "false",
+				"spark.dynamicAllocation.minExecutors": "2",
+				"spark.dynamicAllocation.maxExecutors": "2",
+				"spark.autotune.trackingId": "4bb3f47b-37c6-4bc4-ac4c-5ed436ca96fc"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"synapse_widget": {
+				"version": "0.1"
+			},
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/6653426b-4147-4866-92d5-1d730261436b/resourceGroups/rg-synapse/providers/Microsoft.Synapse/workspaces/ws-synapse-kif/bigDataPools/poolSparkSyn01",
+				"name": "poolSparkSyn01",
+				"type": "Spark",
+				"endpoint": "https://ws-synapse-kif.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/poolSparkSyn01",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net",
+					"authHeader": null
+				},
+				"sparkVersion": "3.3",
+				"nodeCount": 10,
+				"cores": 4,
+				"memory": 28,
+				"extraHeader": null
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"metadata": {
+					"microsoft": {
+						"language": "python"
+					}
+				},
+				"source": [
+					"%%pyspark\n",
+					"df1 = spark.sql(\"SELECT * FROM nyctaxi.passengercountstats\")\n",
+					"df2 = df1.repartition(1)\n",
+					"\n",
+					"df2.write.mode(\"overwrite\").csv(\"/NYCTaxi2/CsvFiles\")\n",
+					"df2.write.mode(\"overwrite\").parquet(\"/NYCTaxi2/ParquetFiles\")"
+				],
+				"execution_count": 6
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					""
+				]
+			}
+		]
+	}
+}
