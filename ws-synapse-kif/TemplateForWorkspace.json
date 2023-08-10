@@ -1,0 +1,950 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"type": "string",
+			"metadata": "Workspace name",
+			"defaultValue": "ws-synapse-kif"
+		},
+		"AzureBlobStgForSyn_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'AzureBlobStgForSyn'"
+		},
+		"ws-synapse-kif-WorkspaceDefaultSqlServer_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'ws-synapse-kif-WorkspaceDefaultSqlServer'",
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:ws-synapse-kif.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+		},
+		"ws-synapse-kif-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://adlskifgen2.dfs.core.windows.net"
+		}
+	},
+	"variables": {
+		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('workspaceName'), '/Pipeline 1')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "RunNotebook1",
+						"type": "SynapseNotebook",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"notebook": {
+								"referenceName": "Notebook 2",
+								"type": "NotebookReference"
+							},
+							"snapshot": true,
+							"conf": {
+								"spark.dynamicAllocation.enabled": null,
+								"spark.dynamicAllocation.minExecutors": null,
+								"spark.dynamicAllocation.maxExecutors": null
+							},
+							"numExecutors": null
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2023-08-09T06:04:16Z"
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/notebooks/Notebook 2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AzureBlobStgForSyn')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('AzureBlobStgForSyn_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/ws-synapse-kif-WorkspaceDefaultSqlServer')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"parameters": {
+					"DBName": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"connectionString": "[parameters('ws-synapse-kif-WorkspaceDefaultSqlServer_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/ws-synapse-kif-WorkspaceDefaultStorage')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('ws-synapse-kif-WorkspaceDefaultStorage_properties_typeProperties_url')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AutoResolveIntegrationRuntime')]",
+			"type": "Microsoft.Synapse/workspaces/integrationRuntimes",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "AutoResolve",
+						"dataFlowProperties": {
+							"computeType": "General",
+							"coreCount": 8,
+							"timeToLive": 0
+						}
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/WorkspaceSystemIdentity')]",
+			"type": "Microsoft.Synapse/workspaces/credentials",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "ManagedIdentity",
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Notebook 1')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "poolSparkSyn01",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 2,
+					"runAsWorkspaceSystemIdentity": false,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "4288903b-cef4-4e96-a427-0587eaf7b9ca"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"synapse_widget": {
+						"version": "0.1",
+						"state": {
+							"d946f05c-c920-4bf5-9c2b-80732d58a715": {
+								"type": "Synapse.DataFrame",
+								"sync_state": {
+									"table": {
+										"rows": [
+											{
+												"0": "date",
+												"1": "open",
+												"2": "high",
+												"3": "low",
+												"4": "close",
+												"5": "adj close",
+												"6": "volume"
+											},
+											{
+												"0": "1993-01-29",
+												"1": "43.968700",
+												"2": "43.968700",
+												"3": "43.750000",
+												"4": "43.937500",
+												"5": "27.357319",
+												"6": "1003200"
+											},
+											{
+												"0": "1993-02-01",
+												"1": "43.968700",
+												"2": "44.250000",
+												"3": "43.968700",
+												"4": "44.250000",
+												"5": "27.551905",
+												"6": "480500"
+											},
+											{
+												"0": "1993-02-02",
+												"1": "44.218700",
+												"2": "44.375000",
+												"3": "44.125000",
+												"4": "44.343700",
+												"5": "27.610243",
+												"6": "201300"
+											},
+											{
+												"0": "1993-02-03",
+												"1": "44.406200",
+												"2": "44.843700",
+												"3": "44.375000",
+												"4": "44.812500",
+												"5": "27.902132",
+												"6": "529400"
+											},
+											{
+												"0": "1993-02-04",
+												"1": "44.968700",
+												"2": "45.093700",
+												"3": "44.468700",
+												"4": "45.000000",
+												"5": "28.018873",
+												"6": "531500"
+											},
+											{
+												"0": "1993-02-05",
+												"1": "44.968700",
+												"2": "45.062500",
+												"3": "44.718700",
+												"4": "44.968700",
+												"5": "27.999384",
+												"6": "492100"
+											},
+											{
+												"0": "1993-02-08",
+												"1": "44.968700",
+												"2": "45.125000",
+												"3": "44.906200",
+												"4": "44.968700",
+												"5": "27.999384",
+												"6": "596100"
+											},
+											{
+												"0": "1993-02-09",
+												"1": "44.812500",
+												"2": "44.812500",
+												"3": "44.562500",
+												"4": "44.656200",
+												"5": "27.804811",
+												"6": "122100"
+											},
+											{
+												"0": "1993-02-10",
+												"1": "44.656200",
+												"2": "44.750000",
+												"3": "44.531200",
+												"4": "44.718700",
+												"5": "27.843721",
+												"6": "379600"
+											}
+										],
+										"schema": [
+											{
+												"key": "0",
+												"name": "_c0",
+												"type": "string"
+											},
+											{
+												"key": "1",
+												"name": "_c1",
+												"type": "string"
+											},
+											{
+												"key": "2",
+												"name": "_c2",
+												"type": "string"
+											},
+											{
+												"key": "3",
+												"name": "_c3",
+												"type": "string"
+											},
+											{
+												"key": "4",
+												"name": "_c4",
+												"type": "string"
+											},
+											{
+												"key": "5",
+												"name": "_c5",
+												"type": "string"
+											},
+											{
+												"key": "6",
+												"name": "_c6",
+												"type": "string"
+											}
+										],
+										"truncated": false
+									},
+									"isSummary": false,
+									"language": "scala"
+								},
+								"persist_state": {
+									"view": {
+										"type": "details",
+										"chartOptions": {
+											"chartType": "bar",
+											"aggregationType": "count",
+											"categoryFieldKeys": [
+												"0"
+											],
+											"seriesFieldKeys": [
+												"0"
+											],
+											"isStacked": false
+										}
+									}
+								}
+							},
+							"be1b7882-76d5-437f-830c-1b583e5c13a6": {
+								"type": "Synapse.DataFrame",
+								"sync_state": {
+									"table": {
+										"rows": [
+											{
+												"0": "20131231",
+												"1": "10624",
+												"2": "35117",
+												"3": "63879",
+												"4": "64392",
+												"5": "172348",
+												"6": "219532",
+												"7": "40.8124",
+												"8": "-73.9513",
+												"9": "40.8124,-73.9513",
+												"10": "40.7982",
+												"11": "-73.9444",
+												"12": "40.7982,-73.9444",
+												"13": "1",
+												"14": "513",
+												"15": "1.3",
+												"16": "CSH",
+												"17": "7.5000",
+												"18": "1.0000",
+												"19": "0.5000",
+												"20": "0.0000",
+												"21": "0.0000",
+												"22": "9.0000"
+											},
+											{
+												"0": "20131231",
+												"1": "7263",
+												"2": "11597",
+												"3": "61733",
+												"4": "62114",
+												"5": "87083",
+												"6": "137768",
+												"7": "40.7352",
+												"8": "-73.9857",
+												"9": "40.7352,-73.9857",
+												"10": "40.751",
+												"11": "-73.9789",
+												"12": "40.751,-73.9789",
+												"13": "1",
+												"14": "380",
+												"15": "1.3",
+												"16": "CSH",
+												"17": "7.0000",
+												"18": "1.0000",
+												"19": "0.5000",
+												"20": "0.0000",
+												"21": "0.0000",
+												"22": "8.5000"
+											},
+											{
+												"0": "20131231",
+												"1": "1899",
+												"2": "5301",
+												"3": "59488",
+												"4": "59815",
+												"5": "82160",
+												"6": "146431",
+												"7": "40.7699",
+												"8": "-73.9483",
+												"9": "40.7699,-73.9483",
+												"10": "40.763",
+												"11": "-73.962",
+												"12": "40.763,-73.962",
+												"13": "1",
+												"14": "326",
+												"15": "1.0",
+												"16": "CSH",
+												"17": "6.0000",
+												"18": "1.0000",
+												"19": "0.5000",
+												"20": "0.0000",
+												"21": "0.0000",
+												"22": "7.5000"
+											}
+										],
+										"schema": [
+											{
+												"key": "0",
+												"name": "DateID",
+												"type": "int"
+											},
+											{
+												"key": "1",
+												"name": "MedallionID",
+												"type": "int"
+											},
+											{
+												"key": "2",
+												"name": "HackneyLicenseID",
+												"type": "int"
+											},
+											{
+												"key": "3",
+												"name": "PickupTimeID",
+												"type": "int"
+											},
+											{
+												"key": "4",
+												"name": "DropoffTimeID",
+												"type": "int"
+											},
+											{
+												"key": "5",
+												"name": "PickupGeographyID",
+												"type": "int"
+											},
+											{
+												"key": "6",
+												"name": "DropoffGeographyID",
+												"type": "int"
+											},
+											{
+												"key": "7",
+												"name": "PickupLatitude",
+												"type": "double"
+											},
+											{
+												"key": "8",
+												"name": "PickupLongitude",
+												"type": "double"
+											},
+											{
+												"key": "9",
+												"name": "PickupLatLong",
+												"type": "string"
+											},
+											{
+												"key": "10",
+												"name": "DropoffLatitude",
+												"type": "double"
+											},
+											{
+												"key": "11",
+												"name": "DropoffLongitude",
+												"type": "double"
+											},
+											{
+												"key": "12",
+												"name": "DropoffLatLong",
+												"type": "string"
+											},
+											{
+												"key": "13",
+												"name": "PassengerCount",
+												"type": "int"
+											},
+											{
+												"key": "14",
+												"name": "TripDurationSeconds",
+												"type": "int"
+											},
+											{
+												"key": "15",
+												"name": "TripDistanceMiles",
+												"type": "double"
+											},
+											{
+												"key": "16",
+												"name": "PaymentType",
+												"type": "string"
+											},
+											{
+												"key": "17",
+												"name": "FareAmount",
+												"type": "decimal"
+											},
+											{
+												"key": "18",
+												"name": "SurchargeAmount",
+												"type": "decimal"
+											},
+											{
+												"key": "19",
+												"name": "TaxAmount",
+												"type": "decimal"
+											},
+											{
+												"key": "20",
+												"name": "TipAmount",
+												"type": "decimal"
+											},
+											{
+												"key": "21",
+												"name": "TollsAmount",
+												"type": "decimal"
+											},
+											{
+												"key": "22",
+												"name": "TotalAmount",
+												"type": "decimal"
+											}
+										],
+										"truncated": false
+									},
+									"isSummary": false,
+									"language": "scala"
+								},
+								"persist_state": {
+									"view": {
+										"type": "details",
+										"chartOptions": {
+											"chartType": "bar",
+											"aggregationType": "sum",
+											"categoryFieldKeys": [
+												"1"
+											],
+											"seriesFieldKeys": [
+												"0"
+											],
+											"isStacked": false
+										}
+									}
+								}
+							}
+						}
+					},
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/6653426b-4147-4866-92d5-1d730261436b/resourceGroups/rg-synapse/providers/Microsoft.Synapse/workspaces/ws-synapse-kif/bigDataPools/poolSparkSyn01",
+						"name": "poolSparkSyn01",
+						"type": "Spark",
+						"endpoint": "https://ws-synapse-kif.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/poolSparkSyn01",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net",
+							"authHeader": null
+						},
+						"sparkVersion": "3.3",
+						"nodeCount": 10,
+						"cores": 4,
+						"memory": 28,
+						"extraHeader": null
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {
+							"microsoft": {
+								"language": "python"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"df = spark.read.load('abfss://synapsedemo@adlskifgen2.dfs.core.windows.net/NYCTripSmall.parquet', format='parquet')\r\n",
+							"display(df.limit(3))"
+						],
+						"outputs": [],
+						"execution_count": 6
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\n",
+							"df.write.mode(\"overwrite\").saveAsTable(\"nyctaxi.trip2\")"
+						],
+						"outputs": [],
+						"execution_count": 7
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "python"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%pyspark\n",
+							"df = spark.read.load('abfss://synapsedemo@adlskifgen2.dfs.core.windows.net/SPY.csv', format='csv'\n",
+							"## If header exists uncomment line below\n",
+							"##, header=True\n",
+							")\n",
+							"display(df.limit(10))"
+						],
+						"outputs": [],
+						"execution_count": 3
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Notebook 2')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"description": "Store PassCountStats as pqt",
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "poolSparkSyn01",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 2,
+					"runAsWorkspaceSystemIdentity": false,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "4bb3f47b-37c6-4bc4-ac4c-5ed436ca96fc"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"synapse_widget": {
+						"version": "0.1"
+					},
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/6653426b-4147-4866-92d5-1d730261436b/resourceGroups/rg-synapse/providers/Microsoft.Synapse/workspaces/ws-synapse-kif/bigDataPools/poolSparkSyn01",
+						"name": "poolSparkSyn01",
+						"type": "Spark",
+						"endpoint": "https://ws-synapse-kif.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/poolSparkSyn01",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net",
+							"authHeader": null
+						},
+						"sparkVersion": "3.3",
+						"nodeCount": 10,
+						"cores": 4,
+						"memory": 28,
+						"extraHeader": null
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\n",
+							"df1 = spark.sql(\"SELECT * FROM nyctaxi.passengercountstats\")\n",
+							"df2 = df1.repartition(1)\n",
+							"\n",
+							"df2.write.mode(\"overwrite\").csv(\"/NYCTaxi2/CsvFiles\")\n",
+							"df2.write.mode(\"overwrite\").parquet(\"/NYCTaxi2/ParquetFiles\")"
+						],
+						"outputs": [],
+						"execution_count": 6
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							""
+						],
+						"outputs": []
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Notebook 3')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "poolSparkSyn01",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 2,
+					"runAsWorkspaceSystemIdentity": false,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "b245eb7e-709c-427a-b27f-9f0a13a1944e"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/6653426b-4147-4866-92d5-1d730261436b/resourceGroups/rg-synapse/providers/Microsoft.Synapse/workspaces/ws-synapse-kif/bigDataPools/poolSparkSyn01",
+						"name": "poolSparkSyn01",
+						"type": "Spark",
+						"endpoint": "https://ws-synapse-kif.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/poolSparkSyn01",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.3",
+						"nodeCount": 10,
+						"cores": 4,
+						"memory": 28,
+						"automaticScaleJobs": false
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"b = 3 + 7"
+						],
+						"outputs": [],
+						"execution_count": 5
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"display(b)"
+						],
+						"outputs": [],
+						"execution_count": 6
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "python"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%pyspark\n",
+							"df = spark.sql(\"\"\"\n",
+							"\n",
+							"SELECT passengerCount,\n",
+							"SUM(TripDistanceMiles) as SumTripDistance,\n",
+							"AVG(TripDistanceMiles) as AvgTripDistance\n",
+							"FROM nyctaxi.trip\n",
+							"GROUP BY passengerCount\n",
+							"ORDER BY passengerCount \n",
+							"\n",
+							"\"\"\") \n",
+							"display(df)\n",
+							"df.write.saveAsTable(\"nyctaxi.passengercountstats\")"
+						],
+						"outputs": [],
+						"execution_count": 8
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"print('jack')"
+						],
+						"outputs": [],
+						"execution_count": 2
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							""
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/poolSparkSyn01')]",
+			"type": "Microsoft.Synapse/workspaces/bigDataPools",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"autoPause": {
+					"enabled": true,
+					"delayInMinutes": 15
+				},
+				"autoScale": {
+					"enabled": true,
+					"maxNodeCount": 3,
+					"minNodeCount": 3
+				},
+				"nodeCount": 10,
+				"nodeSize": "Small",
+				"nodeSizeFamily": "MemoryOptimized",
+				"sparkVersion": "3.3",
+				"isComputeIsolationEnabled": false,
+				"sessionLevelPackagesEnabled": false,
+				"annotations": []
+			},
+			"dependsOn": [],
+			"location": "southcentralus"
+		}
+	]
+}
